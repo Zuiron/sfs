@@ -1,0 +1,24 @@
+.bg-sfs {
+  /*background-color: #181818D1 !important;*/
+  background-color: #FFF !important;
+  box-shadow: 0 4px 20px -2px #4e4e4e;
+}
+
+.sfs-bottom-align {
+  margin-top: auto;
+}
+
+.navbar-light .navbar-nav .active > .nav-link, .navbar-dark .navbar-nav .nav-link.active, .navbar-dark .navbar-nav .nav-link.show, .navbar-dark .navbar-nav .show > .nav-link {
+  color: #00b4ee;
+  border-bottom-style: solid;
+  border-bottom-width: thin;
+  font-weight: bold;
+}
+
+.navbar-light .navbar-nav .nav-link {
+  color: #00b4ee;
+}
+
+.navbar-light .navbar-nav .nav-link:focus, .navbar-light .navbar-nav .nav-link:hover {
+  color: #007aa1;
+}

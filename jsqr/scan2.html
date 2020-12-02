@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+    <meta name="generator" content="Jekyll v3.8.5">
+    <title>SFS - QR scan test</title>
+
+    <script src="./jsQR.js"></script>
+
+    <link rel="canonical" href="https://getbootstrap.com/docs/4.3/examples/cover/">
+
+    <!-- Bootstrap core CSS -->
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+
+    <style>
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+    </style>
+
+    <style>
+      h1 {
+        margin: 10px 0;
+        font-size: 40px;
+      }
+
+      #loadingMessage {
+        text-align: center;
+        padding: 40px;
+        background-color: #eee;
+        color: #000;
+        text-shadow: 0px 0px;
+      }
+
+      #canvas {
+        width: 100%;
+      }
+
+      #output {
+        margin-top: 20px;
+        background: #eee;
+        padding: 10px;
+        padding-bottom: 0;
+        color: #000;
+        text-shadow: 0px 0px;
+      }
+
+      #output div {
+        padding-bottom: 10px;
+        word-wrap: break-word;
+      }
+
+      #noQRFound {
+        text-align: center;
+      }
+    </style>
+
+    <!-- Custom styles for this template -->
+    <link href="cover.css" rel="stylesheet">
+  </head>
+  <body class="text-center">
+    <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
+  <header class="masthead mb-auto">
+    <div class="inner">
+    </div>
+  </header>
+
+  <main role="main" class="inner cover">
+    <h1 class="cover-heading">Scanner QR...</h1>
+    <!--<p class="lead">For å scanne må du godta forespørselen om å dele ditt camera!</p>-->
+    <p class="lead">
+      <!-- here -->
+      <div id="loadingMessage">🎥 Ingen tilgang på kamera... (vennligst godta forespørselen!)</div>
+      <canvas id="canvas" hidden></canvas>
+      <div id="output" hidden>
+
+        <!-- bootstrapped
+        <div id="outputMessage">Leter etter QR kode...</div>
+      -->
+      <div id="outputMessage">
+        <div class="d-flex align-items-center">
+          <strong>Leter etter QR kode...</strong>
+          <div class="spinner-border spinner-border-sm ml-auto" role="status" aria-hidden="true"></div>
+        </div>
+      </div>
+
+        <div hidden><b>Data:</b> <span id="outputData"></span></div>
+      </div>
+      <script>
+        var video = document.createElement("video");
+        var canvasElement = document.getElementById("canvas");
+        var canvas = canvasElement.getContext("2d");
+        var loadingMessage = document.getElementById("loadingMessage");
+        var outputContainer = document.getElementById("output");
+        var outputMessage = document.getElementById("outputMessage");
+        var outputData = document.getElementById("outputData");
+
+        function drawLine(begin, end, color) {
+          canvas.beginPath();
+          canvas.moveTo(begin.x, begin.y);
+          canvas.lineTo(end.x, end.y);
+          canvas.lineWidth = 4;
+          canvas.strokeStyle = color;
+          canvas.stroke();
+        }
+
+        //-MF must use https!
+        // Use facingMode: environment to attemt to get the front camera on phones
+
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(stream) {
+          video.srcObject = stream;
+          video.setAttribute("playsinline", true); // required to tell iOS safari we don't want fullscreen
+          video.play();
+          requestAnimationFrame(tick);
+        });
+
+
+        function tick() {
+          loadingMessage.innerText = "⌛ Laster kamera strøm..."
+          if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            loadingMessage.hidden = true;
+            canvasElement.hidden = false;
+            outputContainer.hidden = false;
+
+            canvasElement.height = video.videoHeight;
+            canvasElement.width = video.videoWidth;
+            canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+            var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+            var code = jsQR(imageData.data, imageData.width, imageData.height, {
+              inversionAttempts: "dontInvert",
+            });
+            if (code) {
+              drawLine(code.location.topLeftCorner, code.location.topRightCorner, "#FF3B58");
+              drawLine(code.location.topRightCorner, code.location.bottomRightCorner, "#FF3B58");
+              drawLine(code.location.bottomRightCorner, code.location.bottomLeftCorner, "#FF3B58");
+              drawLine(code.location.bottomLeftCorner, code.location.topLeftCorner, "#FF3B58");
+              outputMessage.hidden = true;
+              outputData.parentElement.hidden = false;
+              //outputData.innerText = code.data; //disable display of scanned QR data.
+
+              var qrcodedata = code.data;
+              if(qrcodedata.substring(0, 21) == "https://reginn.no/qr/") {
+                //Great SUCCESS! SFS qr code.
+                var kodedisplay = qrcodedata.substring(21, 27);
+                var kodekontroll = qrcodedata.substring(27, 30);
+
+                outputData.innerText = kodedisplay+" - "+kodekontroll;
+                //window.location.href = code.data;
+                setTimeout("location.href = '"+qrcodedata+"';",4000);
+                return; //we found url or decrypted qr code, so stop code and let redirect work its magic :D mohahha - MF
+              }
+              else {
+                outputData.innerText = "Ikke en SFS QR kode";
+              }
+
+              //redirect to scanned qr link-SFS
+              //window.location.href = code.data;
+              //return; //we found url or decrypted qr code so stop code and let redirect work its magic :D mohahha - MF
+
+
+            } else {
+              outputMessage.hidden = false;
+              outputData.parentElement.hidden = true;
+            }
+          }
+          requestAnimationFrame(tick);
+        }
+      </script>
+
+
+
+
+
+
+
+    </p>
+  </main>
+
+  <footer class="mastfoot mt-auto">
+    <div class="inner">
+      <p>SFS QR test :) <a href="http://www.martinfloden.no">martinfloden.no</a>.</p>
+    </div>
+  </footer>
+</div>
+</body>
+</html>
